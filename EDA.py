@@ -1,70 +1,133 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 
 def app():
-    # Read the data
-    data = pd.read_csv('data.csv')
-    datamap = pd.read_csv('data_normalized.csv')
-    
-    # Korelasi Metrik Heatmap
+    # Baca dataset
+    datamap = pd.read_csv('cleaned_diabetes.csv')
+
     numeric_data = datamap.select_dtypes(include=['int', 'float'])
     correlation_matrix = numeric_data.corr()
-    st.title('Correlation Heatmap')
-    fig = px.imshow(correlation_matrix, 
-                    labels=dict(x="Features", y="Features", color="Correlation"),
-                    x=correlation_matrix.index,
-                    y=correlation_matrix.columns,
-                    color_continuous_scale='RdBu_r')
 
-    fig.update_layout(width=800,
-                      height=600)
+    # ==========================
+    # Judul halaman dalam container
+    # ==========================
+    st.markdown(
+        """
+        <div style="background-color:#D1D1D6; padding:20px; border-radius:10px; margin-bottom:20px;">
+            <h2 style="text-align: center; color: #2C3E50;">🩺 Eksplorasi Data Diabetes</h2>
+            <p style="text-align: center;">Menampilkan gambaran umum dari data pasien diabetes. 
+            Visualisasi dibuat interaktif dan sederhana agar mudah dipahami pengguna</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.plotly_chart(fig)
+    # ==========================
+    # 1. Correlation Heatmap
+    # ==========================
+    st.markdown(
+        """
+        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-bottom:20px;">
+            <h3>📊 Korelasi Antar Variabel</h3>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.markdown("""
-    <div style='text-align: justify;'>
+    fig = px.imshow(
+        correlation_matrix,
+        labels=dict(x="Fitur", y="Fitur", color="Korelasi"),
+        x=correlation_matrix.index,
+        y=correlation_matrix.columns,
+        color_continuous_scale='RdBu_r',
+        text_auto=True
+    )
+    fig.update_layout(width=800, height=600)
+    st.plotly_chart(fig, use_container_width=True)
 
-    Pada visualisasi diatas kita bisa melihat hubungan fitur fitur yang ada dengan fitur WRI, pada hasil pengamatan kita memutuskan untuk memakai seluruh fitur yang ada karena semua berada diatas nilai 0 dan tidak ada yang ngeatif, berarti fitur fitur yang ada berhubungan atau berkorelasi dengan fitur WRI. Namun kita tidak memakai kolom WRI karena kolom WRI itu sendiri yang akan diprediksi
-    """, unsafe_allow_html=True)
-    
-    # Sidebar Tahun
-    st.sidebar.title('🌊 WRI Score Dashboard')
-    selected_year = st.sidebar.selectbox('Select a year', sorted(data['Year'].unique(), reverse=True))
+    st.info("Grafik di atas menunjukkan hubungan antar variabel. "
+            "Nilai yang mendekati **1** artinya memiliki hubungan yang kuat, "
+            "misalnya pada kadar **Glukosa** sangat berpengaruh terhadap kemungkinan Diabetes (Outcome).")
 
-    st.title(f'Top and Bottom 10 Regions with WRI Score in {selected_year}')
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # Fungsi buat nampilin top 10 wri tertinggi
-    def top10(year):
-        return data[data['Year'] == year].sort_values(by='WRI', ascending=False).head(10)
+    # ==========================
+    # 2. Distribusi Outcome per Kelompok Umur (Interaktif)
+    # ==========================
+    st.markdown(
+        """
+        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-bottom:20px;">
+            <h3>🧍 Perbandingan Pasien Berdasarkan Usia</h3>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # Fungsi buat nampilin bottom 10 wri terendah
-    def bottom10(year):
-        return data[data['Year'] == year].sort_values(by='WRI').head(10)
+    # Membuat kategori umur per 5 tahun
+    bins = list(range(20, 81, 5))  # 20-80
+    labels = [f"{b}-{b+4}" for b in bins[:-1]]
+    datamap['AgeGroup'] = pd.cut(datamap['Age'], bins=bins, labels=labels, right=False)
 
-    # Plot top 10 negara tertinggi
-    top10_data = top10(selected_year)
-    fig_top10 = px.bar(top10_data, x='WRI', y='Region', orientation='h', title=f'Top 10 Regions with Highest WRI Score in {selected_year}', color='WRI')
-    st.plotly_chart(fig_top10)
-    
-    st.markdown("""
-    <div style='text-align: justify;'>
+    outcome_age = datamap.groupby(['AgeGroup', 'Outcome']).size().reset_index(name='Jumlah')
 
-    Pada gambar diatas kita bisa melihat 10 negara dengan skor WRI tertinggi, kita bisa memfilter tahunnya pada bagian sidebar untuk melihat 10 negara dengan risiko bencana tertinggi disetiap tahunnnya
-    """, unsafe_allow_html=True)
-    
-    # Plot bottom 10 negara terendah
-    bottom10_data = bottom10(selected_year)
-    fig_bottom10 = px.bar(bottom10_data, x='WRI', y='Region', orientation='h', title=f'Top 10 Regions with Lowest WRI Score in {selected_year}', color='WRI')
-    st.plotly_chart(fig_bottom10)
+    # Multiselect untuk filter kelompok usia
+    selected_groups = st.multiselect(
+        "Pilih Rentang Usia:",
+        options=labels,
+        default=labels  # default tampilkan semua
+    )
 
-    st.markdown("""
-    <div style='text-align: justify;'>
+    # Filter data sesuai pilihan
+    if selected_groups:
+        outcome_age = outcome_age[outcome_age['AgeGroup'].isin(selected_groups)]
 
-    Pada gambar diatas kita bisa melihat 10 negara dengan skor WRI terendah, kita bisa memfilter tahunnya pada bagian sidebar untuk melihat 10 negara dengan risiko bencana terendah disetiap tahunnnya
-    """, unsafe_allow_html=True)
+    # Plot
+    fig_outcome_age = px.bar(
+        outcome_age,
+        x='AgeGroup',
+        y='Jumlah',
+        color='Outcome',
+        barmode='group',
+        labels={'AgeGroup': 'Kelompok Usia', 'Outcome': 'Diagnosis'},
+        title="Distribusi Pasien berdasarkan Kelompok Usia dan Diagnosis"
+    )
+    st.plotly_chart(fig_outcome_age, use_container_width=True)
 
-# Jika file ini dijalankan sebagai script utama, jalankan fungsi `app()`
+    st.info("Anda bisa memilih satu atau beberapa rentang usia untuk melihat distribusi pasien sehat (0) dan diabetes (1) pada kelompok tersebut.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ==========================
+    # 3. Informasi Rata-rata Glukosa & BMI
+    # ==========================
+    st.markdown(
+        """
+        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-bottom:20px;">
+            <h3>⚖️ Rata-rata Glukosa & BMI pada Pasien</h3>
+        """,
+        unsafe_allow_html=True
+    )
+
+    avg_values = datamap.groupby("Outcome")[["Glucose", "BMI"]].mean().reset_index()
+    avg_values['Outcome'] = avg_values['Outcome'].map({0: "Sehat (0)", 1: "Diabetes (1)"})
+
+    col1, col2 = st.columns(2)
+    with col1:
+        fig_glucose = px.bar(avg_values, x="Outcome", y="Glucose",
+                             color="Outcome", text_auto=".1f",
+                             title="Rata-rata Glukosa")
+        st.plotly_chart(fig_glucose, use_container_width=True)
+        st.info("Pasien dengan status diabetes memiliki **rata-rata kadar glukosa lebih tinggi** dibanding yang tidak.")
+
+    with col2:
+        fig_bmi = px.bar(avg_values, x="Outcome", y="BMI",
+                         color="Outcome", text_auto=".1f",
+                         title="Rata-rata BMI")
+        st.plotly_chart(fig_bmi, use_container_width=True)
+        st.info("Pasien dengan status diabetes memiliki **rata-rata BMI lebih tinggi**, cenderung overweight/obesitas.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# Run app
 if __name__ == "__main__":
     app()

@@ -1,158 +1,173 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
+import plotly.figure_factory as ff
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-import xgboost as xgb
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from xgboost import XGBClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-def linear_regression_visualization(X_train, X_test, y_train, y_test):
-    # membuat dan melatih model regresi linear
-    model = LinearRegression(fit_intercept=True)
-    model.fit(X_train, y_train)
 
-    # menguji model latih
-    y_pred = model.predict(X_test)
-
-    # visualisasi validasi silang
-    df = pd.DataFrame({'Actual WRI': y_test, 'Predicted WRI': y_pred})
-
-    st.title("Modelling Linear Regression")
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=df['Actual WRI'],
-        y=df['Predicted WRI'],
-        mode='markers',
-        marker=dict(color='blue'),
-        text=df.index,
-        hoverinfo='text+x+y'
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=[df['Actual WRI'].min(), df['Actual WRI'].max()],
-        y=[df['Actual WRI'].min(), df['Actual WRI'].max()],
-        mode='lines',
-        line=dict(color='red', dash='dash'),
-        name='Identity Line'
-    ))
-
-    fig.update_layout(
-        xaxis_title='Actual WRI',
-        yaxis_title='Predicted WRI',
-        title='Linear Regression (fit_intercept=True)',
-        height=600,
-        width=800
-    )
-
-    st.plotly_chart(fig)
-
-    st.markdown("""
-    <div style='text-align: justify;'>
-
-    Validasi silang y_pred dengan data aktual y_test. Ini berguna untuk evaluasi kinerja model karena memungkinkan kita untuk melihat seberapa baik model melakukan prediksi pada data baru yang belum pernah dilihat selama pelatihan. Pada hasil visualisasi diatas bisa dilihat nilai aktual cukuo tersebar dan sulit diprediksi dengan benar namun tetap ada nilai nilai yang berhasil diprediksi
-    """, unsafe_allow_html=True)
-
-def xgboost_regression_visualization(X_train, X_test, y_train, y_test):
-    # Create XGBoost Regressor model
-    lr = 0.1
-    model = xgb.XGBRegressor(learning_rate=lr)
-
-    # Train the model
-    model.fit(X_train, y_train)
-
-    # Make predictions on the test data
-    y_pred = model.predict(X_test)
-
-    # Create a DataFrame for plotting
-    df = pd.DataFrame({'Actual WRI': y_test, 'Predicted WRI': y_pred})
-
-    # Create a scatter plot with tooltips
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=df['Actual WRI'],
-        y=df['Predicted WRI'],
-        mode='markers',
-        marker=dict(color='blue'),
-        text=df.index,
-        hoverinfo='text+x+y'
-    ))
-
-    # Add identity line
-    fig.add_trace(go.Scatter(
-        x=[df['Actual WRI'].min(), df['Actual WRI'].max()],
-        y=[df['Actual WRI'].min(), df['Actual WRI'].max()],
-        mode='lines',
-        line=dict(color='red', dash='dash'),
-        name='Identity Line'
-    ))
-
-    # Update layout
-    fig.update_layout(
-        xaxis_title='Actual WRI',
-        yaxis_title='Predicted WRI',
-        title='XGBoost Regressor (learning_rate=0.1)',
-        height=600,
-        width=800
-    )
-
-    # Display the plot in Streamlit
-    st.title("Modelling XGBoost Regressor")
-    st.plotly_chart(fig)
-
-    st.markdown("""
-    <div style='text-align: justify;'>
-
-    Validasi silang y_pred dengan data aktual y_test. Ini berguna untuk evaluasi kinerja model karena memungkinkan kita untuk melihat seberapa baik model melakukan prediksi pada data baru. Pada hasil visualisasi diatas bisa dilihat hampir seluruh nilai aktual diprediksi dengan benar namun ada beberapa nilai yang sedikit melenceng dari hasil prediksi tapi tidak begitu jauh dari hasil prediksi
-    """, unsafe_allow_html=True)
 
 def app():
-    # Load data
-    data_normalized = pd.read_csv('data_normalized.csv')
+    # Load dataset
+    data = pd.read_csv("cleaned_diabetes.csv")
 
-    # split data
-    X = data_normalized.drop(['WRI'], axis=1)
-    y = data_normalized['WRI']
+    # Pisahkan fitur & target
+    X = data.drop(['Outcome'], axis=1)
+    y = data['Outcome']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # visualisasi regresi linear
-    linear_regression_visualization(X_train, X_test, y_train, y_test)
-
-    # visualisasi XGBoost Regressor
-    xgboost_regression_visualization(X_train, X_test, y_train, y_test)
-
-    # Display metric comparison
-    display_metric_comparison()
-
-def display_metric_comparison():
-    data = {
-        'Metric': ['MAE', 'MSE', 'RMSE', 'R^2 Score'],
-        'Linear Regression(fit_intercept=True)': [0.337602003267724, 0.2703338878379385, 0.519936426727286, 0.9417344600297715],
-        'XGBoost(learning_rate=0.1)': [0.11263247125601507, 0.07180614258589653, 0.26796668185783196, 0.9845234953545497]
-    }
-
-    df = pd.DataFrame(data)
-
-    fig = go.Figure()
-
-    colors = ['blue', 'green']
-    for i, model in enumerate(['Linear Regression(fit_intercept=True)', 'XGBoost(learning_rate=0.1)']):
-        values = df[model].tolist()
-        fig.add_trace(go.Bar(x=df['Metric'], y=values, name=model, marker_color=[colors[i] if val > 0 else 'red' for val in values]))
-
-    fig.update_layout(
-        title='Comparison of Evaluation Metrics',
-        xaxis=dict(title='Metric', tickangle=-45),
-        yaxis=dict(title='Value', range=[0, 1]),
-        legend=dict(title='Model')
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    st.plotly_chart(fig)
+    # ========================
+    # Judul Halaman
+    # ========================
+    st.markdown(
+        """
+        <div style="background-color:#D1D1D6; padding:20px; border-radius:10px; margin-bottom:20px;">
+            <h2 style="text-align:center; color:#2C3E50;">🔎 Modelling: XGBoost vs LDA</h2>
+            <p style="text-align:center; font-size:16px; color:#2C3E50;">
+                Perbandingan dua algoritma Machine Learning untuk mendeteksi dini Diabetes Melitus
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.markdown("""
-    <div style='text-align: justify;'>
+    # ========================
+    # XGBoost
+    # ========================
+    st.markdown(
+        """
+        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-top:10px;">
+            <h3>📌 Model XGBoost</h3>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    Dari perbandingan skor metrik ini dapat disimpulkan bahwa model XGBoost secara konsisten lebih unggul dari Linear Regression dalam semua metrik yang dievaluasi. Jadi berdasarkan hasil ini model XGBoost dianggap lebih baik dalam memprediksi target daripada model Linear Regression untuk kasus ini
-    """, unsafe_allow_html=True)
+    # Implementasi XGBoost sesuai teori 
+    xgb_model = XGBClassifier(
+        n_estimators=100,            # t -> jumlah iterasi/pohon
+        learning_rate=0.1,           # η -> step size shrinkage
+        max_depth=5,                 # kedalaman pohon
+        gamma=0.1,                   # γ -> penalti jumlah daun
+        reg_lambda=1.0,              # λ -> regulasi L2 bobot daun
+        reg_alpha=0.5,               # α -> regulasi L1 bobot daun
+        subsample=0.8,               # sampling baris
+        colsample_bytree=0.8,        # sampling fitur
+        objective="binary:logistic", # fungsi objektif -> logloss
+        eval_metric="logloss",       # evaluasi loss logistik
+    )
+
+    # Training model
+    xgb_model.fit(X_train, y_train)
+
+    # Prediksi
+    y_pred_xgb = xgb_model.predict(X_test)
+
+    # Confusion Matrix
+    cm_xgb = confusion_matrix(y_test, y_pred_xgb)
+    z_text = [[str(y) for y in x] for x in cm_xgb]
+
+    fig_xgb = ff.create_annotated_heatmap(
+        z=cm_xgb, x=['Negatif', 'Positif'], y=['Negatif', 'Positif'],
+        annotation_text=z_text, colorscale='Blues'
+    )
+    fig_xgb.update_layout(title="Confusion Matrix - XGBoost")
+    st.plotly_chart(fig_xgb, use_container_width=True)
+
+    # Evaluasi
+    acc_xgb = accuracy_score(y_test, y_pred_xgb)
+    prec_xgb = precision_score(y_test, y_pred_xgb)
+    rec_xgb = recall_score(y_test, y_pred_xgb)
+    f1_xgb = f1_score(y_test, y_pred_xgb)
+
+    st.info(f"""
+    **Hasil Evaluasi XGBoost**  
+    - Accuracy: {acc_xgb:.4f}  
+    - Precision: {prec_xgb:.4f}  
+    - Recall: {rec_xgb:.4f}  
+    - F1 Score: {f1_xgb:.4f}  
+    """)
+
+
+    # ========================
+    # LDA
+    # ========================
+    st.markdown(
+        """
+        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-top:20px;">
+            <h3>📌 Model LDA</h3>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    lda_model = LinearDiscriminantAnalysis(solver='eigen')
+    lda_model.fit(X_train, y_train)
+    y_pred_lda = lda_model.predict(X_test)
+
+    cm_lda = confusion_matrix(y_test, y_pred_lda)
+    z_text = [[str(y) for y in x] for x in cm_lda]
+
+    fig_lda = ff.create_annotated_heatmap(
+        z=cm_lda, x=['Negatif', 'Positif'], y=['Negatif', 'Positif'],
+        annotation_text=z_text, colorscale='Blues'
+    )
+    fig_lda.update_layout(title="Confusion Matrix - LDA")
+    st.plotly_chart(fig_lda, use_container_width=True)
+
+    acc_lda = accuracy_score(y_test, y_pred_lda)
+    prec_lda = precision_score(y_test, y_pred_lda)
+    rec_lda = recall_score(y_test, y_pred_lda)
+    f1_lda = f1_score(y_test, y_pred_lda)
+
+    st.info(f"""
+    **Hasil Evaluasi LDA**  
+    - Accuracy: {acc_lda:.4f}  
+    - Precision: {prec_lda:.4f}  
+    - Recall: {rec_lda:.4f}  
+    - F1 Score: {f1_lda:.4f}  
+    """)
+
+    # ========================
+    # Perbandingan Evaluasi
+    # ========================
+    st.markdown(
+        """
+        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-top:20px;">
+            <h3>📊 Perbandingan Evaluasi Model</h3>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    df_eval = pd.DataFrame({
+        "Model": ["XGBoost", "LDA"],
+        "Accuracy": [acc_xgb, acc_lda],
+        "Precision": [prec_xgb, prec_lda],
+        "Recall": [rec_xgb, rec_lda],
+        "F1 Score": [f1_xgb, f1_lda]
+    })
+
+    df_visual = df_eval.melt(id_vars="Model", var_name="Metrik", value_name="Score")
+
+    fig_compare = px.bar(
+        df_visual, x="Metrik", y="Score", color="Model",
+        barmode="group", text="Score",
+        title="Perbandingan Evaluasi Model XGBoost vs LDA",
+        labels={"Score": "Nilai", "Metrik": "Jenis Evaluasi"},
+        color_discrete_map={"XGBoost": "#CBDCEB", "LDA": "#6D94C5"}  # soft blue & teal
+    )
+    fig_compare.update_traces(texttemplate='%{text:.4f}', textposition='outside')
+    fig_compare.update_layout(yaxis=dict(range=[0, 1]))
+    st.plotly_chart(fig_compare, use_container_width=True)
+
+    st.info("👉 Dari hasil evaluasi, model **XGBoost** menunjukkan performa lebih baik dibandingkan **LDA** di semua metrik.")
 
 if __name__ == "__main__":
     app()
