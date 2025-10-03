@@ -9,8 +9,8 @@ def app():
         """
         <div style="text-align: center; padding: 15px; background-color: #D1D1D6; border-radius: 10px;">
             <h1 style="color: #2C3E50;">🩺 Deteksi Dini Diabetes Melitus</h1>
-            <p style="font-size:18px; color:#2C3E50;">
-                Platform Interaktif Untuk Mendukung Tenaga Medis dan Masyarakat
+            <p style="font-size:16px; color:#2C3E50;">
+                Platform Untuk Mendukung Tenaga Medis dan Masyarakat Dalam Memprediksi Kasus Diabetes
             </p>
         </div>
         """,
@@ -63,12 +63,12 @@ def app():
                 <div style="width:30%;">
                     <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" width="80">
                     <h4>Pola Makan</h4>
-                    <p>Konsumsi makanan bergizi seimbang, kurangi gula, perbanyak sayur & buah.</p>
+                    <p>Konsumsi makanan bergizi seimbang, kurangi gula, dan perbanyak sayur & buah.</p>
                 </div>
                 <div style="width:30%;">
                     <img src="https://cdn-icons-png.flaticon.com/512/2964/2964514.png" width="80">
                     <h4>Aktivitas Fisik</h4>
-                    <p>Lakukan olahraga minimal <b>30 menit/hari</b> untuk menjaga metabolisme tubuh.</p>
+                    <p>Olahraga minimal <b>30 menit/hari</b> untuk menjaga metabolisme tubuh.</p>
                 </div>
                 <div style="width:30%;">
                     <img src="https://cdn-icons-png.flaticon.com/512/4151/4151022.png" width="80">

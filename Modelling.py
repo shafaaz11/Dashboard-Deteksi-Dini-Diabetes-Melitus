@@ -8,7 +8,6 @@ from xgboost import XGBClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
-
 def app():
     # Load dataset
     data = pd.read_csv("cleaned_diabetes.csv")
@@ -51,16 +50,16 @@ def app():
 
     # Implementasi XGBoost sesuai teori 
     xgb_model = XGBClassifier(
-        n_estimators=100,            # t -> jumlah iterasi/pohon
-        learning_rate=0.1,           # η -> step size shrinkage
-        max_depth=5,                 # kedalaman pohon
-        gamma=0.1,                   # γ -> penalti jumlah daun
-        reg_lambda=1.0,              # λ -> regulasi L2 bobot daun
-        reg_alpha=0.5,               # α -> regulasi L1 bobot daun
-        subsample=0.8,               # sampling baris
-        colsample_bytree=0.8,        # sampling fitur
-        objective="binary:logistic", # fungsi objektif -> logloss
-        eval_metric="logloss",       # evaluasi loss logistik
+        n_estimators=100,
+        learning_rate=0.1,
+        max_depth=5,
+        gamma=0.1,
+        reg_lambda=1.0,
+        reg_alpha=0.5,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        objective="binary:logistic",
+        eval_metric="logloss",
     )
 
     # Training model
@@ -71,8 +70,9 @@ def app():
 
     # Confusion Matrix
     cm_xgb = confusion_matrix(y_test, y_pred_xgb)
-    z_text = [[str(y) for y in x] for x in cm_xgb]
+    TP, FN, FP, TN = cm_xgb[1, 1], cm_xgb[1, 0], cm_xgb[0, 1], cm_xgb[0, 0]
 
+    z_text = [[str(y) for y in x] for x in cm_xgb]
     fig_xgb = ff.create_annotated_heatmap(
         z=cm_xgb, x=['Negatif', 'Positif'], y=['Negatif', 'Positif'],
         annotation_text=z_text, colorscale='Blues'
@@ -88,12 +88,17 @@ def app():
 
     st.info(f"""
     **Hasil Evaluasi XGBoost**  
-    - Accuracy: {acc_xgb:.4f}  
-    - Precision: {prec_xgb:.4f}  
-    - Recall: {rec_xgb:.4f}  
-    - F1 Score: {f1_xgb:.4f}  
-    """)
+    - True Positive (TP): {TP} → Pasien diabetes yang berhasil diprediksi benar sebagai diabetes  
+    - False Negative (FN): {FN} → Pasien diabetes tetapi salah diprediksi tidak diabetes  
+    - True Negative (TN): {TN} → Pasien tidak diabetes yang berhasil diprediksi benar sebagai tidak diabetes  
+    - False Positive (FP): {FP} → Pasien tidak diabetes tetapi salah diprediksi sebagai diabetes  
 
+    **Metrik Evaluasi:**  
+    - Accuracy ({acc_xgb:.2%}) → Seberapa banyak prediksi yang benar dari total data  
+    - Precision ({prec_xgb:.2%}) → Dari semua yang diprediksi diabetes, berapa yang benar-benar diabetes  
+    - Recall ({rec_xgb:.2%}) → Dari semua pasien diabetes, berapa banyak yang bisa ditemukan  
+    - F1 Score ({f1_xgb:.2%}) → Rata-rata harmonis antara Precision dan Recall  
+    """)
 
     # ========================
     # LDA
@@ -112,8 +117,9 @@ def app():
     y_pred_lda = lda_model.predict(X_test)
 
     cm_lda = confusion_matrix(y_test, y_pred_lda)
-    z_text = [[str(y) for y in x] for x in cm_lda]
+    TP, FN, FP, TN = cm_lda[1, 1], cm_lda[1, 0], cm_lda[0, 1], cm_lda[0, 0]
 
+    z_text = [[str(y) for y in x] for x in cm_lda]
     fig_lda = ff.create_annotated_heatmap(
         z=cm_lda, x=['Negatif', 'Positif'], y=['Negatif', 'Positif'],
         annotation_text=z_text, colorscale='Blues'
@@ -128,23 +134,22 @@ def app():
 
     st.info(f"""
     **Hasil Evaluasi LDA**  
-    - Accuracy: {acc_lda:.4f}  
-    - Precision: {prec_lda:.4f}  
-    - Recall: {rec_lda:.4f}  
-    - F1 Score: {f1_lda:.4f}  
+    - True Positive (TP): {TP} → Pasien diabetes yang berhasil diprediksi benar sebagai diabetes  
+    - False Negative (FN): {FN} → Pasien diabetes tetapi salah diprediksi tidak diabetes  
+    - True Negative (TN): {TN} → Pasien tidak diabetes yang berhasil diprediksi benar sebagai tidak diabetes  
+    - False Positive (FP): {FP} → Pasien tidak diabetes tetapi salah diprediksi sebagai diabetes  
+
+    **Metrik Evaluasi:**  
+    - Accuracy ({acc_lda:.2%}) → Seberapa banyak prediksi yang benar dari total data  
+    - Precision ({prec_lda:.2%}) → Dari semua yang diprediksi diabetes, berapa yang benar-benar diabetes  
+    - Recall ({rec_lda:.2%}) → Dari semua pasien diabetes, berapa banyak yang bisa ditemukan  
+    - F1 Score ({f1_lda:.2%}) → Rata-rata harmonis antara Precision dan Recall  
     """)
 
     # ========================
     # Perbandingan Evaluasi
     # ========================
-    st.markdown(
-        """
-        <div style="background-color:#EFEFF2; padding:20px; border-radius:10px; margin-top:20px;">
-            <h3>📊 Perbandingan Evaluasi Model</h3>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.subheader("📊 Perbandingan Evaluasi Model")
 
     df_eval = pd.DataFrame({
         "Model": ["XGBoost", "LDA"],
@@ -161,13 +166,14 @@ def app():
         barmode="group", text="Score",
         title="Perbandingan Evaluasi Model XGBoost vs LDA",
         labels={"Score": "Nilai", "Metrik": "Jenis Evaluasi"},
-        color_discrete_map={"XGBoost": "#CBDCEB", "LDA": "#6D94C5"}  # soft blue & teal
+        color_discrete_map={"XGBoost": "#CBDCEB", "LDA": "#6D94C5"}
     )
     fig_compare.update_traces(texttemplate='%{text:.4f}', textposition='outside')
     fig_compare.update_layout(yaxis=dict(range=[0, 1]))
     st.plotly_chart(fig_compare, use_container_width=True)
 
     st.info("👉 Dari hasil evaluasi, model **XGBoost** menunjukkan performa lebih baik dibandingkan **LDA** di semua metrik.")
+
 
 if __name__ == "__main__":
     app()
