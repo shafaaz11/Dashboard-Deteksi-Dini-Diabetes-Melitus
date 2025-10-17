@@ -135,7 +135,7 @@ def app():
         elif glucose < 100:
             if prediction[0] == 1:
                 st.warning("⚠️ Meskipun kadar glukosa **<100 mg/dL (normal)**, model memprediksi diabetes. "
-                           "Hal ini bisa dipengaruhi oleh faktor lain seperti **BMI, usia, atau riwayat keluarga (DPF)**.")
+                           "Hal ini bisa dipengaruhi oleh faktor lain seperti **BMI, usia, atau riwayat keluarga (DPF)**. Tetap Lakukan Konsul ke Tenaga Ahli")
             else:
                 st.info("✅ **Glukosa Normal (<100 mg/dL)** dan model memprediksi sehat. "
                         "Tetap jaga pola hidup sehat ya! 💪")
@@ -144,7 +144,7 @@ def app():
             if prediction[0] == 1:
                 st.warning("⚠️ Glukosa berada di rentang **Pradiabetes (100–125 mg/dL)** "
                            "dan model memprediksi pasien terkena diabetes. "
-                           "Hal ini bisa disebabkan faktor lain seperti **kelebihan berat badan, usia lebih tua, atau riwayat keluarga**.")
+                           "Hal ini bisa disebabkan faktor lain seperti **kelebihan berat badan, usia lebih tua, atau riwayat keluarga**. Tetap lakukan pemeriksaan lanjutan")
             else:
                 st.warning("⚠️ **Pradiabetes (100–125 mg/dL)** terdeteksi. "
                            "Model tidak memprediksi diabetes, namun kondisi ini tetap berisiko. "
@@ -156,7 +156,7 @@ def app():
                          "Disarankan segera konsultasi ke tenaga medis dan terapkan pola hidup sehat.")
             else:
                 st.warning("⚠️ **Glukosa Tinggi (≥126mg/dL)** namun model tidak mendeteksi diabetes. "
-                           "Ini bisa menunjukkan pemeriksaan sewaktu. Lakukan pemeriksaan lanjutan.")
+                           "Ini bisa menunjukkan pemeriksaan glukosa sewaktu. Tetap lakukan pemeriksaan lanjutan.")
 
         elif glucose >= 200:
             if prediction[0] == 1:
@@ -174,9 +174,9 @@ def app():
             """
             ---
             📝 **Catatan Penting:**
+            - Hasil ini adalah **prediksi model** dan bukan pengganti konsultasi medis.
             - Hasil prediksi di atas bertujuan untuk **Deteksi Dini Diabetes Melitus**.  
-            - Diagnosis Diabetes Melitus **tidak hanya berdasarkan glukosa saja**, tetapi juga faktor lain seperti **BMI, usia, dan riwayat keluarga (DPF)**.  
-            - Hasil ini adalah **prediksi model** dan bukan pengganti konsultasi medis.  
+            - Diagnosis Diabetes Melitus **tidak hanya berdasarkan glukosa saja**, tetapi juga faktor lain seperti **BMI, usia, dan riwayat keluarga (DPF)**.    
             - Untuk kepastian diagnosis, lakukan pemeriksaan lanjutan seperti **HbA1c, GTT (Tes Toleransi Glukosa), dan konsultasi dengan tenaga medis.**
             """
         )
