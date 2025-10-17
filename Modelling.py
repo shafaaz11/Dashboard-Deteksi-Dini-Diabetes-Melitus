@@ -51,15 +51,9 @@ def app():
     # Implementasi XGBoost sesuai teori 
     xgb_model = XGBClassifier(
         n_estimators=100,
-        learning_rate=0.1,
-        max_depth=5,
+        learning_rate=0.2,
+        max_depth=7,
         gamma=0.1,
-        reg_lambda=1.0,
-        reg_alpha=0.5,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        objective="binary:logistic",
-        eval_metric="logloss",
     )
 
     # Training model
@@ -112,7 +106,7 @@ def app():
         unsafe_allow_html=True
     )
 
-    lda_model = LinearDiscriminantAnalysis(solver='eigen')
+    lda_model = LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')
     lda_model.fit(X_train, y_train)
     y_pred_lda = lda_model.predict(X_test)
 
